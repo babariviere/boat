@@ -1,3 +1,5 @@
+extern crate boat;
+
 fn main() {
-    println!("Hello, world!");
+    println!("Hello, OTP!");
 }
