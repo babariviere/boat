@@ -5,10 +5,46 @@ pub enum Error {}
 
 /// Storage definition
 pub trait Storage {
-    /// Get token by it's identifier
-    fn get_token(&self, id: &str) -> Result<crate::Token, Error>;
-    /// Return a list of all stored tokens
-    fn list_tokens(&self) -> Result<Vec<crate::Token>, Error>;
-    /// Add/Set token into storage (overwrite existing token)
-    fn set_token(&mut self, token: crate::Token) -> Result<(), Error>;
+    /// Read token from storage
+    fn read_token(&self, id: &str) -> Result<crate::Token, Error>;
+    /// Return a list of all available token id
+    fn list_tokens(&self) -> Result<Vec<crate::TokenID>, Error>;
+    /// Write token in storage
+    fn write_token(&mut self, token: crate::Token) -> Result<(), Error>;
 }
+
+/// Backend where we can read/write token as raw values
+/// This is used to treat data before writing/reading it (e.g PGP into Local storage)
+pub trait Backend {
+    /// Read token from storage
+    fn read(&self, id: &str, buf: &mut [u8]) -> Result<(), Error>;
+    /// Write token into storage
+    fn write(&mut self, id: &str, buf: &[u8]) -> Result<(), Error>;
+}
+
+// We want to be able to write into GPG that will write into Local
+
+/// Local storage to read/write tokens
+/// Each token will be stored in clear
+pub struct Local {
+    root: std::path::PathBuf,
+}
+
+impl Backend for Local {}
+impl Storage for Local {}
+
+pub struct PGP<'a, B: Backend> {
+    inner: &'a B,
+}
+
+impl<'a, B> PGP<'a, B>
+where
+    B: Backend,
+{
+    pub fn new(s: &'a S) -> Self {
+        PGP { inner: s }
+    }
+}
+
+impl<B> Backend for PGP<'_, B> where B: Backend {}
+impl<B> Storage for PGP<'_, B> where B: Backend {}
