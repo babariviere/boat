@@ -18,7 +18,7 @@ pub fn hotp(key: &[u8], counter: u64, digit: u8) -> u32 {
     let hs = hmac_res.code();
 
     // compute HOTP value
-    let offset = (hs[hs.len() - 1] & 0xf) as usize;
+    let offset = (hs[hs.len() - 1] & (hs.len() as u8 - 5)) as usize;
     let snum = (hs[offset] as u32 & 0x7f) << 24
         | (hs[offset + 1] as u32 & 0xff) << 16
         | (hs[offset + 2] as u32 & 0xff) << 8
